@@ -194,8 +194,14 @@ function global_overrides(sig)
 {
     switch(sig)
     {
+        case "prev_filter":
+            fadeout_animation.play(function(anim) {
+                fe.list.filter_index = (fe.list.filter_index - 1) % fe.filters.len();
+                fe.set_display(fe.list.display_index);
+            });
+            return true;
         case "next_filter":
-        fadeout_animation.play(function(anim) {
+            fadeout_animation.play(function(anim) {
                 fe.list.filter_index = (fe.list.filter_index + 1) % fe.filters.len();
                 fe.set_display(fe.list.display_index);
             });
