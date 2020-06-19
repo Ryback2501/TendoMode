@@ -25,6 +25,12 @@ direction <- {
     down = -2
 };
 
+anchors <- {
+    top =    { left = 0, center = 1, right = 2 },
+    middle = { left = 3, center = 4, right = 5 },
+    bottom = { left = 6, center = 7, right = 8 }
+}
+
 // TODO: Move this properties to settings or a table
 
 //Used in position_to_x function
@@ -39,6 +45,9 @@ local max_slot_index = 4;
 //Used in GameSlot class
 local art_max_width = 304;
 local art_max_height = 272;
+
+// TODO: For small flyers
+// local mini_art_max_side = 52;
 
 // Classes
 
@@ -273,6 +282,62 @@ class MenuItem
             height = { start = icon.height, end = icon.texture_height + increment }
         });
         highlight_animation.play();
+    }
+}
+
+class Panel
+{
+    surface = null;
+
+    constructor(x, y, anchor, items_data)
+    {
+        local total_w = 0;
+        local max_h = 0;
+        foreach(item in items_data)
+        {
+            total_w += get_item_total_width(item);
+            if(max_h < item.height) max_h = item.height;
+        }
+
+        surface = fe.add_surface(total_w, max_h);
+        surface.x = x;
+        surface.y = y;
+        surface.origin_x = (surface.width / 2) * (anchor % 3);
+        surface.origin_y = (surface.height / 2) * (anchor / 3);
+
+        local obj = null;
+        total_w = 0;
+        foreach(item in items_data)
+        {
+            switch(item.item_type)
+            {
+                case "image":
+                    obj = surface.add_image(item.path, total_w, (max_h - item.height) / 2);
+                    obj.origin_x = obj.texture_width / 2;
+                    obj.origin_y = obj.texture_height / 2;
+                    obj.x += obj.origin_x;
+                    obj.y += obj.origin_y;
+                    break;
+                case "text":
+                    obj = surface.add_text(item.text, total_w, (max_h - item.height) / 2, item.width, item.height);
+                    obj.set_rgb(167, 0, 0);
+                    break;
+                default:
+                    ::print("Type " + item.item_type + " not supported.\n");
+            }
+            if("settings" in item) foreach(key, value in item.settings) obj[key] = value;
+            total_w += get_item_total_width(item);
+        }
+    }
+
+    function set_visible(visible)
+    {
+        surface.visible = visible;
+    }
+
+    function get_item_total_width(item)
+    {
+        return item.width + ("margin" in item ? item.margin : 0);
     }
 }
 

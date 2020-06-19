@@ -34,6 +34,43 @@ game_title_text.set_rgb(colors.title.r, colors.title.g, colors.title.b);
 //Game List
 game_list <- GameList(0, 296, 1920, 368);
 
+//Controls information
+local controls_text_settings = { char_size = 24, margin = 0, align = Align.MiddleLeft };
+
+local game_list_controls_items = [
+    { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8 },
+    { item_type = "text", text = "Menu", width = 59, height = 40, margin = 44, settings = controls_text_settings },
+    { item_type = "image", path = "UI/Buttons/two_sides.png", width = 40, height = 40, margin = 8 },
+    { item_type = "text", text = "Select Game", width = 142, height = 40, margin = 44, settings = controls_text_settings },
+    // { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8, settings = { rotation = 180 } },
+    // { item_type = "text", text = "-- ?? --", width = 72, height = 40, margin = 44, settings = controls_text_settings },
+    { item_type = "image", path = "UI/Buttons/b.png", width = 40, height = 40, margin = 8 },
+    { item_type = "text", text = "Back", width = 53, height = 40, margin = 44, settings = controls_text_settings },
+    { item_type = "image", path = "UI/Buttons/a.png", width = 40, height = 40, margin = 8 },
+    { item_type = "text", text = "Start Game", width = 127, height = 40, margin = 44, settings = controls_text_settings },
+    { item_type = "image", path = "UI/Buttons/l_wide.png", width = 80, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/r_wide.png", width = 80, height = 40, margin = 8 },
+    { item_type = "text", text = "Change Region", width = 172, height = 40, settings = controls_text_settings },
+];
+
+local menu_controls_items = [
+    { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8, settings = { rotation = 180 } },
+    { item_type = "text", text = "Game List", width = 112, height = 40, margin = 44, settings = controls_text_settings },
+    { item_type = "image", path = "UI/Buttons/two_sides.png", width = 40, height = 40, margin = 8 },
+    { item_type = "text", text = "Select Option", width = 149, height = 40, margin = 44, settings = controls_text_settings },
+    { item_type = "image", path = "UI/Buttons/b.png", width = 40, height = 40, margin = 8 },
+    { item_type = "text", text = "Back", width = 53, height = 40, margin = 44, settings = controls_text_settings },
+    { item_type = "image", path = "UI/Buttons/a.png", width = 40, height = 40, margin = 8 },
+    { item_type = "text", text = "OK", width = 34, height = 40, margin = 44, settings = controls_text_settings },
+    { item_type = "image", path = "UI/Buttons/l_wide.png", width = 80, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/r_wide.png", width = 80, height = 40, margin = 8 },
+    { item_type = "text", text = "Change Region", width = 172, height = 40, settings = controls_text_settings },
+];
+
+local game_list_controls = Panel(fe.layout.width / 2, 936, anchors.middle.center, game_list_controls_items);
+local menu_controls = Panel(fe.layout.width / 2, 936, anchors.middle.center, menu_controls_items);
+menu_controls.set_visible(false);
+
 //Header
 local header = fe.add_surface(1920, 136);
 header.y = -8;
@@ -102,18 +139,30 @@ foreach (animation in selector_effect_anims)
 
 function play_selector_jump(up)
 {
-    local from = up ? game_list.selector.image : top_menu.selector;
-    local to = up ? top_menu.selector : game_list.selector.image;
+    local start = {
+        x = game_list.selector.image.x - game_list.selector.image.origin_x,
+        y = game_list.selector.image.y - game_list.selector.image.origin_y + game_list.surface.y,
+        w = game_list.selector.image.texture_width,
+        h = game_list.selector.image.texture_height
+    };
 
-    local start = { x = from.x - from.origin_x, y = from.y - from.origin_y + (up ? game_list.surface.y : 0), w = from.texture_width, h = from.texture_height };
-    local end = { x = to.x - to.origin_x, y = to.y - to.origin_y + (up ? 0 : game_list.surface.y), w = to.texture_width, h = to.texture_height };
+    local end = {
+        x = top_menu.selector.x - top_menu.selector.origin_x,
+        y = top_menu.selector.y - top_menu.selector.origin_y,
+        w = top_menu.selector.texture_width,
+        h = top_menu.selector.texture_height
+    };
 
     selector_effect_anims.left.setup_properties({ x = { start = start.x, end = end.x }, y = { start = start.y, end = end.y }, height = { start = start.h, end = end.h } });
     selector_effect_anims.top.setup_properties({ x = { start = start.x, end = end.x }, y = { start = start.y, end = end.y }, width = { start = start.w, end = end.w } });
     selector_effect_anims.right.setup_properties({ x = { start = start.x + start.w - 8, end = end.x + end.w - 8 }, y = { start = start.y, end = end.y }, height = { start = start.h, end = end.h } });
     selector_effect_anims.bottom.setup_properties({ x = { start = start.x, end = end.x }, y = { start = start.y + start.h - 8, end = end.y + end.h - 8 }, width = { start = start.w, end = end.w } });
 
-    foreach(animation in selector_effect_anims) animation.play();
+    foreach(animation in selector_effect_anims)
+    {
+        animation.config.interpolation = up ? interpolations.linear : interpolations.reverse;
+        animation.play();
+    }
 }
 
 //Fade effect when entering/exiting the layout
@@ -158,6 +207,8 @@ function games_signal_overrides(sig)
             if(blocking_animations_running()) return true;
             header_down_animation.play();
             play_selector_jump(true);
+            game_list_controls.set_visible(false);
+            menu_controls.set_visible(true);
             return true;
         case "down":
             return true;
@@ -180,10 +231,13 @@ function menu_signal_overrides(sig)
         case "select":
             top_menu.run_selected_action();
             return true;
+        // case "back":
+        //     return true;
         case "down":
-        case "back":
             header_up_animation.play();
             play_selector_jump(false);
+            menu_controls.set_visible(false);
+            game_list_controls.set_visible(true);
             return true;
     }
     return false;
