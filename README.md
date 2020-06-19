@@ -8,6 +8,12 @@ This layout uses extra modules not included in Attract Mode. You can download th
 
 The instructions about how to setup the modules are on the [Readme.md](https://github.com/Ryback2501/wafam/blob/master/Readme.md) file of the WAFAM project.
 
+## Customizations
+This layout is prepared to have a different look and feel depending on the active filter.
+
+The idea was to create filters for the games, each one for a different region, and show the games of a region with the look and feel of the corresponding console for that region. The game versions released in Japan would have the Famicom look and feel and the game versions released in USA or Europe, the NES look and feel.
+
+I haven't included all the media files in the repository to avoid copyright problems, but they are available in this post. There are links under the screenshots. None of the images are the original images, because I had to resize and adapt them, but prevention is better than cure.
 ## How to add customizations?
 1. Create a folder inside the **UI** folder of the layout with all the images (as in the Nintendont folder already included).
 2. If you need to, add a flag image in the **UI/Flags** folder of the layout.
