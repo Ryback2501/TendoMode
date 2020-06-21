@@ -1,5 +1,5 @@
 # TendoMode
-A Nintendo Classic Mini like layout for Attract Mode.
+A Nintendo Classic Mini like layout for Attract Mode v2.6.1.
 
 It is functional, but still a work in progress.
 
