@@ -1,10 +1,22 @@
-//TODO: ADD OPTIONS
+/*******
+Settings
+*******/
+class UserConfig </ help="Settings" /> {
+	</ label="Select Button", help="Select button to show for Select action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=1 />
+	select_button="a";
+	</ label="Cancel Button", help="Select button to show for Back action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=2 />
+	back_button="b";
+	</ label="Previous Filter Button", help="Select button to show for Previous Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=3 />
+	prev_filter_button="r_wide";
+	</ label="Next filter Button", help="Select button to show for Next Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=4 />
+	next_filter_button="l_wide";
+}
+config <- fe.get_config();
 
 /*************
 Initialization
 *************/
 
-// local my_config = fe.get_config();
 fe.load_module("wafam/animate");
 dofile(fe.script_dir +  "definitions.nut");
 filter_data <- get_filter_data();
@@ -44,12 +56,12 @@ local game_list_controls_items = [
     { item_type = "text", text = "Select Game", width = 142, height = 40, margin = 44, settings = controls_text_settings },
     // { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8, settings = { rotation = 180 } },
     // { item_type = "text", text = "-- ?? --", width = 72, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/b.png", width = 40, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/" + config.back_button + ".png", width = 40, height = 40, margin = 8 },
     { item_type = "text", text = "Back", width = 53, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/a.png", width = 40, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/" + config.select_button + ".png", width = 40, height = 40, margin = 8 },
     { item_type = "text", text = "Start Game", width = 127, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/l_wide.png", width = 80, height = 40, margin = 8 },
-    { item_type = "image", path = "UI/Buttons/r_wide.png", width = 80, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/" + config.prev_filter_button + ".png", width = 80, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/" + config.next_filter_button + ".png", width = 80, height = 40, margin = 8 },
     { item_type = "text", text = "Change Region", width = 172, height = 40, settings = controls_text_settings },
 ];
 
@@ -58,12 +70,12 @@ local menu_controls_items = [
     { item_type = "text", text = "Game List", width = 112, height = 40, margin = 44, settings = controls_text_settings },
     { item_type = "image", path = "UI/Buttons/two_sides.png", width = 40, height = 40, margin = 8 },
     { item_type = "text", text = "Select Option", width = 149, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/b.png", width = 40, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/" + config.back_button + ".png", width = 40, height = 40, margin = 8 },
     { item_type = "text", text = "Back", width = 53, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/a.png", width = 40, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/" + config.select_button + ".png", width = 40, height = 40, margin = 8 },
     { item_type = "text", text = "OK", width = 34, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/l_wide.png", width = 80, height = 40, margin = 8 },
-    { item_type = "image", path = "UI/Buttons/r_wide.png", width = 80, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/" + config.prev_filter_button + ".png", width = 80, height = 40, margin = 8 },
+    { item_type = "image", path = "UI/Buttons/" + config.next_filter_button + ".png", width = 80, height = 40, margin = 8 },
     { item_type = "text", text = "Change Region", width = 172, height = 40, settings = controls_text_settings },
 ];
 
@@ -106,66 +118,60 @@ local footer = fe.add_image("UI/" + filter_data.platform + "/footer.png", 0, 960
 /*******************
 Selector jump effect
 *******************/
-local selector_effect =
-{
-    left = fe.add_image("UI/white_pixel.png", 0, 0, 8, 8),
-    top = fe.add_image("UI/white_pixel.png", 0, 0, 8, 8),
-    right = fe.add_image("UI/white_pixel.png", 0, 0, 8, 8),
-    bottom = fe.add_image("UI/white_pixel.png", 0, 0, 8, 8)
-}
+local selector_jump_effect = fe.add_surface(game_list.selector.image.texture_width, game_list.selector.image.texture_height);
+selector_jump_effect.visible = false;
 
-foreach(side in selector_effect)
+local selector_jump_effect_content =
 {
-    side.set_rgb(54, 255, 254);
-    side.visible = false;
+    left = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, 8, game_list.selector.image.texture_height),
+    top = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, game_list.selector.image.texture_width, 8),
+    right = selector_jump_effect.add_image("UI/white_pixel.png", game_list.selector.image.texture_width, 0, 8, game_list.selector.image.texture_height),
+    bottom = selector_jump_effect.add_image("UI/white_pixel.png", 0, game_list.selector.image.texture_height, game_list.selector.image.texture_width, 8)
 }
+selector_jump_effect_content.right.origin_x = 8;
+selector_jump_effect_content.bottom.origin_y = 8;
+foreach(side in selector_jump_effect_content) side.set_rgb(54, 255, 254);
 
-//Selector jump effect animations
-local selector_effect_anims = {
-    left = Animation(150, selector_effect.left, {}),
-    top = Animation(150, selector_effect.top, {}),
-    right = Animation(150, selector_effect.right, {}),
-    bottom = Animation(150, selector_effect.bottom, {}),
-}
+local selector_jump_effect_anim = Animation(150, selector_jump_effect, {
+    onupdate = function(anim)
+    {
+        selector_jump_effect_content.left.width = 8 * anim.config.properties.width.start / anim.object.width.tofloat();
+        selector_jump_effect_content.top.height = 8 * anim.config.properties.height.start / anim.object.height.tofloat();
+        selector_jump_effect_content.right.width = 8 * anim.config.properties.width.start / anim.object.width.tofloat();
+        selector_jump_effect_content.right.origin_x = selector_jump_effect_content.right.width;
+        selector_jump_effect_content.bottom.height = 8 * anim.config.properties.height.start / anim.object.height.tofloat();
+        selector_jump_effect_content.bottom.origin_y = selector_jump_effect_content.bottom.height;
+    },
+    onstop = function(anim) { anim.object.visible = false; }
+    });
 
-foreach (animation in selector_effect_anims)
+function prepare_selector_jump_effect(up, from, to)
 {
-    animation.config = {
-        onstart = function(anim) { anim.object.x = anim.config.properties.x.start; anim.object.y = anim.config.properties.y.start; anim.object.visible = true; },
-        onstop = function(anim) { anim.object.visible = false; },
-        interpolation = interpolations.linear
-    };
+    selector_jump_effect_anim.setup_properties({
+        x = { start = from.x - from.origin_x, end = to.x - to.origin_x },
+        y = { start = from.y - from.origin_y + game_list.surface.y, end = to.y - to.origin_y },
+        width = { start = from.texture_width, end = to.texture_width },
+        height = { start = from.texture_height, end = to.texture_height },
+    });
+    local begin = up ? "start" : "end";
+    selector_jump_effect.x = selector_jump_effect_anim.config.properties.x[begin];
+    selector_jump_effect.y = selector_jump_effect_anim.config.properties.y[begin];
+    selector_jump_effect.width = selector_jump_effect_anim.config.properties.width[begin];
+    selector_jump_effect.height = selector_jump_effect_anim.config.properties.height[begin];
 }
 
 function play_selector_jump(up)
 {
-    local start = {
-        x = game_list.selector.image.x - game_list.selector.image.origin_x,
-        y = game_list.selector.image.y - game_list.selector.image.origin_y + game_list.surface.y,
-        w = game_list.selector.image.texture_width,
-        h = game_list.selector.image.texture_height
-    };
-
-    local end = {
-        x = top_menu.selector.x - top_menu.selector.origin_x,
-        y = top_menu.selector.y - top_menu.selector.origin_y,
-        w = top_menu.selector.texture_width,
-        h = top_menu.selector.texture_height
-    };
-
-    selector_effect_anims.left.setup_properties({ x = { start = start.x, end = end.x }, y = { start = start.y, end = end.y }, height = { start = start.h, end = end.h } });
-    selector_effect_anims.top.setup_properties({ x = { start = start.x, end = end.x }, y = { start = start.y, end = end.y }, width = { start = start.w, end = end.w } });
-    selector_effect_anims.right.setup_properties({ x = { start = start.x + start.w - 8, end = end.x + end.w - 8 }, y = { start = start.y, end = end.y }, height = { start = start.h, end = end.h } });
-    selector_effect_anims.bottom.setup_properties({ x = { start = start.x, end = end.x }, y = { start = start.y + start.h - 8, end = end.y + end.h - 8 }, width = { start = start.w, end = end.w } });
-
-    foreach(animation in selector_effect_anims)
-    {
-        animation.config.interpolation = up ? interpolations.linear : interpolations.reverse;
-        animation.play();
-    }
+    prepare_selector_jump_effect(up, game_list.selector.image, top_menu.selector);
+    selector_jump_effect.visible = true;
+    selector_jump_effect_anim.config.interpolation = up ? interpolations.linear : interpolations.reverse;
+    selector_jump_effect_anim.play();
 }
 
-//Fade effect when entering/exiting the layout
+
+/**********
+Fade Effect
+**********/
 local fade_effect = fe.add_image("UI/white_pixel.png", 0, 0, fe.layout.width, fe.layout.height)
 fade_effect.set_rgb(0, 0, 0);
 local fadeout_animation = Animation(75, fade_effect, { properties = {alpha = { start = 0, end = 255 } }, onstart = function(anim) { anim.object.visible = true; } }, true);
