@@ -44,7 +44,15 @@ local game_title_text = game_title.add_text("[Title]", 0, 0, 1368, 60);
 game_title_text.set_rgb(colors.title.r, colors.title.g, colors.title.b);
 
 //Game List
-game_list <- GameList(0, 296, 1920, 368);
+
+// TODO: Move this properties to settings or a table
+// max_slot_index = 4;
+// slot_width = 340;
+// slot_offset = 120;
+// art_max_width = 304;
+// art_max_height = 272;
+
+game_list <- GameList(0, 296, fe.layout.width, 368, 4, 340, 120);
 
 //Controls information
 local controls_text_settings = { char_size = 24, margin = 0, align = Align.MiddleLeft };
@@ -89,11 +97,11 @@ header.y = -8;
 header.add_image("UI/" + filter_data.platform + "/header.png", 0, -28);
 local header_down_animation = Animation(150, header, { properties = { y = { start = -8, end = 0 } }, onstop = function(anim) { top_menu.show_selector(true); }, onstart = function(anim) {
     current_level = levels.menu;
-    game_list.selector.set_visible(false);
+    game_list.show_selector(false);
     top_menu.items[top_menu.selected_item].highlight(true);
 } }, true);
 
-local header_up_animation = Animation(150, header, { properties = { y = { start = 0, end = -8 } }, onstop = function(anim) { game_list.selector.set_visible(true); }, onstart = function(anim) {
+local header_up_animation = Animation(150, header, { properties = { y = { start = 0, end = -8 } }, onstop = function(anim) { game_list.show_selector(true); }, onstart = function(anim) {
         current_level = levels.games;
         top_menu.items[top_menu.selected_item].highlight(false);
         top_menu.show_selector(false);
@@ -118,15 +126,15 @@ local footer = fe.add_image("UI/" + filter_data.platform + "/footer.png", 0, 960
 /*******************
 Selector jump effect
 *******************/
-local selector_jump_effect = fe.add_surface(game_list.selector.image.texture_width, game_list.selector.image.texture_height);
+local selector_jump_effect = fe.add_surface(game_list.selector.texture_width, game_list.selector.texture_height);
 selector_jump_effect.visible = false;
 
 local selector_jump_effect_content =
 {
-    left = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, 8, game_list.selector.image.texture_height),
-    top = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, game_list.selector.image.texture_width, 8),
-    right = selector_jump_effect.add_image("UI/white_pixel.png", game_list.selector.image.texture_width, 0, 8, game_list.selector.image.texture_height),
-    bottom = selector_jump_effect.add_image("UI/white_pixel.png", 0, game_list.selector.image.texture_height, game_list.selector.image.texture_width, 8)
+    left = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, 8, game_list.selector.texture_height),
+    top = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, game_list.selector.texture_width, 8),
+    right = selector_jump_effect.add_image("UI/white_pixel.png", game_list.selector.texture_width, 0, 8, game_list.selector.texture_height),
+    bottom = selector_jump_effect.add_image("UI/white_pixel.png", 0, game_list.selector.texture_height, game_list.selector.texture_width, 8)
 }
 selector_jump_effect_content.right.origin_x = 8;
 selector_jump_effect_content.bottom.origin_y = 8;
@@ -162,7 +170,7 @@ function prepare_selector_jump_effect(up, from, to)
 
 function play_selector_jump(up)
 {
-    prepare_selector_jump_effect(up, game_list.selector.image, top_menu.selector);
+    prepare_selector_jump_effect(up, game_list.selector, top_menu.selector);
     selector_jump_effect.visible = true;
     selector_jump_effect_anim.config.interpolation = up ? interpolations.linear : interpolations.reverse;
     selector_jump_effect_anim.play();

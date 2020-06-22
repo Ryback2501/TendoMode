@@ -4,7 +4,7 @@ fe.load_module("wafam/animate");
 //Data
 
 Regions <- {
-    Nintendont = {platform = "Nintendont", flag = "" }
+    Nintendont = {platform = "Nintendont", flag = "" },
     // Famicom_Japan = { platform = "Famicom", flag = "JAP" },
     // NES_USA = { platform = "NES", flag = "USA" },
     // NES_Europe = { platform = "NES", flag = "EUR" },
@@ -32,16 +32,6 @@ anchors <- {
 }
 
 // TODO: Move this properties to settings or a table
-
-//Used in position_to_x function
-local slot_offset = 120;
-
-//Used in GameSlot class and in position_to_x function
-local slot_width = 340;
-
-//Used in GameList class
-local max_slot_index = 4;
-
 //Used in GameSlot class
 local art_max_width = 304;
 local art_max_height = 272;
@@ -56,40 +46,55 @@ class GameList
     surface = null;
     game_slots = [];
     selector = null;
-    index = 0;
+    selector_move_anim = null;
 
-    constructor(x, y, width, height)
+    index = 0;
+    selector_position = 0;
+    max_position = 0;
+    slot_width = 0;
+    slot_offset = 0;
+
+    constructor(x, y, width, height, max_position, slot_width, slot_offset)
     {
         index = fe.list.index;
         surface = fe.add_surface(width, height);
         surface.x = x;
         surface.y = y;
 
+        //TODO: max_position = ((width - slot_offset) / slot_width) - 1;
+        this.max_position = max_position;
+        this.slot_width = slot_width;
+        this.slot_offset = slot_offset;
+
         local size = get_fixed_list_size();
         for(local i = 0; i < size; i++)
         {
             game_slots.append(GameSlot(surface, i, i == index));
-            update_position(game_slots[i], -2);
+            game_slots[i].set_position(position_to_x(-2));
         }
-        selector = Selector(surface);
-        update_positions(index - 2);
+        update_game_slot_positions(index - 2);
+
+        selector = surface.add_image("UI/" + filter_data.platform + "/selector_game.png", position_to_x(0), 8);
+        selector.origin_x = 8;
+        selector.origin_y = 8;
+        selector_move_anim = Animation(150, selector, null, true);
     }
 
     function select_next(dir)
     {
-        if((dir < 0 && selector.slot_index > 0) || (dir > 0 && selector.slot_index < max_slot_index))
+        if((dir < 0 && selector_position > 0) || (dir > 0 && selector_position < max_position))
         {
-            selector.move(dir);
+            move_selector(dir);
         }
         else
         {
-            local from = index - selector.slot_index - 2;
-            local to = index - selector.slot_index + max_slot_index + 2;
-            update_positions(from);
+            local from = index - selector_position - 2;
+            local to = index - selector_position + max_position + 2;
+            update_game_slot_positions(from);
             for(local i = from; i <= to; i++)
             {
                 local index = abs_remainder(i, game_slots.len());
-                game_slots[index].move(dir);
+                game_slots[index].move(dir, slot_width);
             }
         }
 
@@ -102,36 +107,48 @@ class GameList
     function get_fixed_list_size() 
     {
         local list_size = fe.filters[fe.list.filter_index].size;
-        local min_size = max_slot_index + 5;
+        local min_size = max_position + 5;
         return ((min_size / list_size) + (min_size % list_size == 0 ? 0 : 1)) * list_size;
     }
 
-    function update_positions(first_slot_index)
+    function update_game_slot_positions(first_slot_index)
     {
-        for(local i = -2; i <= max_slot_index + 2; i++) update_position(game_slots[abs_remainder(i + first_slot_index + 2, game_slots.len())], i);
+        for(local i = -2; i <= max_position + 2; i++)
+            game_slots[abs_remainder(i + first_slot_index + 2, game_slots.len())].set_position(position_to_x(i));
     }
 
-    function update_position(game_slot, position)
+    function position_to_x(position)
     {
-        local x_pos = position_to_x(position);
-        foreach(item in game_slot.items) item.x = x_pos;
+        return (slot_width * position) + slot_offset;
+    }
+
+    //TODO: El selector es una imagen, meter sus cosas aquí
+
+    function move_selector(dir)
+    {
+        selector_position += dir;
+        selector_move_anim.setup_properties({ x = { start = position_to_x(selector_position - dir), end = position_to_x(selector_position) } })
+        selector_move_anim.play();
+    }
+
+    function show_selector(visible)
+    {
+        selector.visible = visible;
     }
 }
 
 class GameSlot
 {
     index = 0;
-
     surface = null;
-
     items = null;
     move_animations = null;
     highlight_animation = null;
 
     constructor(surface, index, selected = false)
     {
-        this.index = index;
         this.surface = surface;
+        this.index = index;
 
         items = {
             bg = surface.add_image("UI/" + filter_data.platform + "/game_bg.png", 0, 8),
@@ -154,11 +171,16 @@ class GameSlot
         foreach(item in items) item.visible = visible;
     }
 
-    function move(dir)
+    function set_position(position)
+    {
+        foreach(item in items) item.x = position;
+    }
+
+    function move(dir, distance)
     {
         foreach(anim in move_animations)
         {
-            anim.setup_properties({ x = { start = anim.object.x, end = anim.object.x - (slot_width * dir) } });
+            anim.setup_properties({ x = { start = anim.object.x, end = anim.object.x - (distance * dir) } });
             anim.play();
         }
     }
@@ -167,34 +189,6 @@ class GameSlot
     {
         highlight_animation.setup_properties({ alpha = { start = selected ? 0 : 255, end = selected ? 255 : 0 } });
         highlight_animation.play();
-    }
-}
-
-class Selector
-{
-    slot_index = 0;
-    image = null;
-    move_animation = null;
-
-    constructor(surface)
-    {
-        image = surface.add_image("UI/" + filter_data.platform + "/selector_game.png", position_to_x(0), 8);
-        image.origin_x = 8;
-        image.origin_y = 8;
-        image.zorder = 100;
-        move_animation = Animation(150, image, null, true);
-    }
-
-    function move(dir)
-    {
-        slot_index = slot_index + dir;
-        move_animation.setup_properties({ x = { start = position_to_x(slot_index - dir), end = position_to_x(slot_index) } })
-        move_animation.play();
-    }
-
-    function set_visible(visible)
-    {
-        image.visible = visible;
     }
 }
 
@@ -346,12 +340,6 @@ class Panel
 function abs_remainder(a, b)
 {
     return (a < 0 ? a % b + b : a) % b;
-}
-
-// TODO: Add to class and propagate??
-function position_to_x(position)
-{
-    return slot_offset + (slot_width * position);
 }
 
 function set_rgba(obj, r, g, b, a)
