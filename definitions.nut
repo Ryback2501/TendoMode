@@ -31,11 +31,6 @@ anchors <- {
     bottom = { left = 6, center = 7, right = 8 }
 }
 
-// TODO: Move this properties to settings or a table
-//Used in GameSlot class
-local art_max_width = 304;
-local art_max_height = 272;
-
 // Classes
 
 class GameList
@@ -51,7 +46,7 @@ class GameList
     slot_width = 0;
     slot_offset = 0;
 
-    constructor(x, y, width, height, slot_width, slot_offset)
+    constructor(x, y, width, height, slot_width, slot_offset, art_max_width, art_max_height)
     {
         index = fe.list.index;
         surface = fe.add_surface(width, height);
@@ -65,7 +60,7 @@ class GameList
         local size = get_fixed_list_size();
         for(local i = 0; i < size; i++)
         {
-            game_slots.append(GameSlot(surface, i, i == index));
+            game_slots.append(GameSlot(surface, i, art_max_width, art_max_height, i == index));
             game_slots[i].set_position(position_to_x(-2));
         }
         update_game_slot_positions(index - 2);
@@ -94,9 +89,7 @@ class GameList
             }
         }
 
-        //TODO: Modify fe.list.index before calling this method
         index = abs_remainder(index + dir, game_slots.len());
-        fe.list.index = index;
         game_slots[abs_remainder(index - dir, game_slots.len())].highlight(false);
         game_slots[index].highlight(true);
     }
@@ -140,7 +133,7 @@ class GameSlot
     move_animations = null;
     highlight_animation = null;
 
-    constructor(surface, index, selected = false)
+    constructor(surface, index, art_max_width, art_max_height, selected = false)
     {
         this.surface = surface;
         this.index = index;

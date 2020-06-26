@@ -53,7 +53,7 @@ game_title_text.set_rgb(colors.title.r, colors.title.g, colors.title.b);
 // miniature_movement_margin = 3;
 
 //Game List
-game_list <- GameList(0, 296, fe.layout.width, 368, 340, 120);
+game_list <- GameList(0, 296, fe.layout.width, 368, 340, 120, 304, 272);
 
 //Miniature list
 local miniature_list = MiniatureList(fe.layout.width / 2, 700, 56, 28, 30, 3);
@@ -215,11 +215,13 @@ function games_signal_overrides(sig)
     {
         case "left":
             if(blocking_animations_running()) return true;
+            fe.list.index += direction.left;
             game_list.select_next(direction.left);
             miniature_list.select_next(direction.left);
             return true;
         case "right":
             if(blocking_animations_running()) return true;
+            fe.list.index += direction.right;
             game_list.select_next(direction.right);
             miniature_list.select_next(direction.right);
             return true;
