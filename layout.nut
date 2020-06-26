@@ -43,16 +43,20 @@ game_title.add_image("UI/" + filter_data.platform + "/game_title_bg.png");
 local game_title_text = game_title.add_text("[Title]", 0, 0, 1368, 60);
 game_title_text.set_rgb(colors.title.r, colors.title.g, colors.title.b);
 
-//Game List
-
 // TODO: Move this properties to settings or a table
-// max_slot_index = 4;
 // slot_width = 340;
 // slot_offset = 120;
 // art_max_width = 304;
 // art_max_height = 272;
+// local mini_art_max_side = 52;
+// vsiible_miniatures = 30;
+// miniature_movement_margin = 3;
 
-game_list <- GameList(0, 296, fe.layout.width, 368, 4, 340, 120);
+//Game List
+game_list <- GameList(0, 296, fe.layout.width, 368, 340, 120);
+
+//Miniature list
+local miniature_list = MiniatureList(fe.layout.width / 2, 700, 56, 28, 30, 3);
 
 //Controls information
 local controls_text_settings = { char_size = 24, margin = 0, align = Align.MiddleLeft };
@@ -87,8 +91,8 @@ local menu_controls_items = [
     { item_type = "text", text = "Change Region", width = 172, height = 40, settings = controls_text_settings },
 ];
 
-local game_list_controls = Panel(fe.layout.width / 2, 936, anchors.middle.center, game_list_controls_items);
-local menu_controls = Panel(fe.layout.width / 2, 936, anchors.middle.center, menu_controls_items);
+local game_list_controls = ControlsInfoPanel(fe.layout.width / 2, 936, anchors.middle.center, game_list_controls_items);
+local menu_controls = ControlsInfoPanel(fe.layout.width / 2, 936, anchors.middle.center, menu_controls_items);
 menu_controls.set_visible(false);
 
 //Header
@@ -212,10 +216,12 @@ function games_signal_overrides(sig)
         case "left":
             if(blocking_animations_running()) return true;
             game_list.select_next(direction.left);
+            miniature_list.select_next(direction.left);
             return true;
         case "right":
             if(blocking_animations_running()) return true;
             game_list.select_next(direction.right);
+            miniature_list.select_next(direction.right);
             return true;
         case "up":
             if(blocking_animations_running()) return true;

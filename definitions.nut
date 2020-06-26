@@ -36,9 +36,6 @@ anchors <- {
 local art_max_width = 304;
 local art_max_height = 272;
 
-// TODO: For small flyers
-// local mini_art_max_side = 52;
-
 // Classes
 
 class GameList
@@ -54,15 +51,14 @@ class GameList
     slot_width = 0;
     slot_offset = 0;
 
-    constructor(x, y, width, height, max_position, slot_width, slot_offset)
+    constructor(x, y, width, height, slot_width, slot_offset)
     {
         index = fe.list.index;
         surface = fe.add_surface(width, height);
         surface.x = x;
         surface.y = y;
 
-        //TODO: max_position = ((width - slot_offset) / slot_width) - 1;
-        this.max_position = max_position;
+        max_position = (((width - slot_offset) / slot_width) - 1).tointeger();
         this.slot_width = slot_width;
         this.slot_offset = slot_offset;
 
@@ -82,7 +78,7 @@ class GameList
 
     function select_next(dir)
     {
-        if((dir < 0 && selector_position > 0) || (dir > 0 && selector_position < max_position))
+        if((dir == direction.left && selector_position > 0) || (dir == direction.right && selector_position < max_position))
         {
             move_selector(dir);
         }
@@ -93,11 +89,12 @@ class GameList
             update_game_slot_positions(from);
             for(local i = from; i <= to; i++)
             {
-                local index = abs_remainder(i, game_slots.len());
-                game_slots[index].move(dir, slot_width);
+                local ind = abs_remainder(i, game_slots.len());
+                game_slots[ind].move(dir, slot_width);
             }
         }
 
+        //TODO: Modify fe.list.index before calling this method
         index = abs_remainder(index + dir, game_slots.len());
         fe.list.index = index;
         game_slots[abs_remainder(index - dir, game_slots.len())].highlight(false);
@@ -121,8 +118,6 @@ class GameList
     {
         return (slot_width * position) + slot_offset;
     }
-
-    //TODO: El selector es una imagen, meter sus cosas aquí
 
     function move_selector(dir)
     {
@@ -216,7 +211,7 @@ class Menu
 
     function select_next(dir)
     {
-        if((dir < 0 && selected_item > 0) || (dir > 0 && selected_item < items.len() - 1))
+        if((dir == direction.left && selected_item > 0) || (dir == direction.right && selected_item < items.len() - 1))
         {
             selected_item += dir;
             selector_animation.setup_properties({ x = { start =  items[selected_item - dir].bg.x, end =  items[selected_item].bg.x } });
@@ -279,7 +274,104 @@ class MenuItem
     }
 }
 
-class Panel
+class MiniatureList
+{
+    surface = null;
+    miniatures = [];
+    selector = null;
+    pointer = null;
+    center_pos_x = 0;
+    visible_slots = 0;
+    slots_margin = 0;
+
+    constructor(center_x, y, side, selector_distance, visible_miniatures, margin)
+    {
+        local len = fe.filters[fe.list.filter_index].size;
+ 
+        center_pos_x = center_x;
+        visible_slots = visible_miniatures < len ? visible_miniatures : len;
+        slots_margin = margin;
+        surface = fe.add_surface((side * visible_slots) + ((visible_slots - 1) * 4), side + selector_distance)
+        surface.y = y;
+
+        for(local i = 0; i < len; i++)
+        {
+            miniatures.append(add_artwork("flyer", surface, i - fe.list.index));
+            if(miniatures[i].texture_width >= miniatures[i].texture_height)
+            {
+                miniatures[i].width = side;
+                miniatures[i].height = side * miniatures[i].texture_height / miniatures[i].texture_width;
+            }
+            else
+            {
+                miniatures[i].width = side * miniatures[i].texture_width / miniatures[i].texture_height;
+                miniatures[i].height = side;
+            }
+            miniatures[i].y = side + selector_distance - miniatures[i].height;
+        }
+
+        place_miniatures();
+ 
+        pointer = AnimatedSprite(surface.add_image("UI/selector_miniature.png"),
+            { sprite_width = 40, sprite_height = 24, animations = { pointer = { sequence = [0, 1, 2, 1], fps = 12, loop = true } } });
+        pointer.sprite.origin_x = pointer.sprite.subimg_width / 2;
+        pointer.sprite.origin_y = pointer.sprite.subimg_height + 4;
+        pointer.play();
+
+        select_current_miniature();
+    }
+
+    function select_next(dir)
+    {
+        place_miniatures(dir);
+        select_current_miniature();
+    }
+
+    function place_miniatures(dir = null)
+    {
+        if(visible_slots == miniatures.len() && dir != null) return;
+        local first = null;
+
+        if(dir == null)
+        {
+            first = visible_slots == miniatures.len() || fe.list.index < visible_slots - slots_margin ? 0 : fe.list.index - visible_slots + slots_margin + 1;
+        }
+        else
+        {
+            local limit = fe.list.index + (dir * slots_margin);
+            if( !miniatures[fe.list.index].visible)
+            {
+                first = dir == direction.right ? 0 : miniatures.len() - visible_slots;
+            }
+            else if (limit >= 0 && limit < miniatures.len() && !miniatures[limit].visible)
+            {
+                first = limit + (dir == direction.right ? (1 - visible_slots) : 0);
+            }
+        }
+
+        if(first == null) return;
+
+        local total_x = 0;
+        for(local i = 0; i < miniatures.len(); i++)
+        {
+            miniatures[i].visible = i >= first && i < first + visible_slots;
+            if(miniatures[i].visible)
+            {
+                miniatures[i].x = total_x;
+                total_x += miniatures[i].width + 4;
+            }
+        }
+        surface.x = center_pos_x - ((total_x - 4) / 2);
+    }
+
+    function select_current_miniature()
+    {
+        pointer.sprite.x = (miniatures[fe.list.index].x + miniatures[fe.list.index].width / 2).tointeger();
+        pointer.sprite.y = miniatures[fe.list.index].y;
+    }
+}
+
+class ControlsInfoPanel
 {
     surface = null;
 
