@@ -24,3 +24,6 @@ I haven't included all the media files in the repository to avoid copyright prob
     Famicom = { platform = "Famicom", flag = "JAP" },
     ````
     The value of *platform* is the name of the folder and the value of *flag* is the name of the image file of the flag without extension.
+
+## Issues detected and solved
+- [Exclamation marks in ROM filenames](https://github.com/Ryback2501/TendoMode/issues/1)
