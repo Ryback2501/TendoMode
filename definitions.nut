@@ -48,16 +48,18 @@ class GameList
 
     constructor(x, y, width, height, slot_width, slot_offset, art_max_width, art_max_height)
     {
+        max_position = (((width - slot_offset) / slot_width) - 1).tointeger();
+        local size = get_fixed_list_size();
+        if(size == 0) return;
+
         index = fe.list.index;
         surface = fe.add_surface(width, height);
         surface.x = x;
         surface.y = y;
 
-        max_position = (((width - slot_offset) / slot_width) - 1).tointeger();
         this.slot_width = slot_width;
         this.slot_offset = slot_offset;
 
-        local size = get_fixed_list_size();
         for(local i = 0; i < size; i++)
         {
             game_slots.append(GameSlot(surface, i, art_max_width, art_max_height, i == index));
@@ -97,6 +99,8 @@ class GameList
     function get_fixed_list_size() 
     {
         local list_size = fe.filters[fe.list.filter_index].size;
+        if(list_size == 0) return list_size;
+
         local min_size = max_position + 5;
         return ((min_size / list_size) + (min_size % list_size == 0 ? 0 : 1)) * list_size;
     }
@@ -137,17 +141,23 @@ class GameSlot
     {
         this.surface = surface;
         this.index = index;
-
+        local players_data = get_players_data();
+        if(players_data.len() == 0) players_data.append("1");
+        
         items = {
             bg = surface.add_image("UI/" + filter_data.platform + "/game_bg.png", 0, 8),
             selected_bg = surface.add_image("UI/" + filter_data.platform + "/selected_game_bg.png", 0, 8),
-            art = add_artwork("flyer", surface, index - fe.list.index)
+            art = add_artwork("flyer", surface, index - fe.list.index),
+            players = surface.add_image("UI/" + players_data[0] + "P.png", 0, 8)
         }
-
-        if(!selected) { items.selected_bg.alpha = 0; }
+        
+        if(!selected) items.selected_bg.alpha = 0;
         fit_aspect_ratio(items.art, art_max_width, art_max_height);
         items.art.origin_x = -(8 +  ((art_max_width - items.art.width) / 2));
         items.art.origin_y = -(16 +  ((art_max_height - items.art.height) / 2));
+        items.players.origin_x = -232;
+        items.players.origin_y = -300;
+        if(players_data.len() > 1 && players_data[1] == "s") items.players.set_rgb(255, 160, 64);
 
         move_animations = {};
         foreach(key, value in items) move_animations[key] <- Animation(150, value);
@@ -178,21 +188,26 @@ class GameSlot
         highlight_animation.setup_properties({ alpha = { start = selected ? 0 : 255, end = selected ? 255 : 0 } });
         highlight_animation.play();
     }
+    
+    function get_players_data()
+    {
+        return split(fe.game_info(Info.Players, index - fe.list.index), ",");
+    }
 }
 
 class Menu
 {
-    items = {};
+    items = null;
     selector = null;
     selected_item = 0;
     selector_animation = null;
 
     constructor(items_info, x, y, item_width, item_height, holder = ::fe)
     {
+        items = {};
         for(local i = 0; i < items_info.len(); i++)
-        {
             items[i] <- MenuItem(holder, items_info[i], x + (i * item_width), y, item_width, item_height);
-        }
+
         selector = fe.add_image("UI/selector_menu.png");
         selector.origin_x = 8;
         selector.origin_y = 8;
@@ -270,9 +285,8 @@ class MenuItem
 class MiniatureList
 {
     surface = null;
-    miniatures = [];
+    miniatures = null;
     selector = null;
-    pointer = null;
     center_pos_x = 0;
     visible_slots = 0;
     slots_margin = 0;
@@ -280,7 +294,9 @@ class MiniatureList
     constructor(center_x, y, side, selector_distance, visible_miniatures, margin)
     {
         local len = fe.filters[fe.list.filter_index].size;
- 
+        if(len == 0) return;
+        
+        miniatures = [];
         center_pos_x = center_x;
         visible_slots = visible_miniatures < len ? visible_miniatures : len;
         slots_margin = margin;
@@ -304,17 +320,17 @@ class MiniatureList
         }
 
         place_miniatures();
- 
-        pointer = AnimatedSprite(surface.add_image("UI/selector_miniature.png"),
-            { sprite_width = 40, sprite_height = 24, animations = { pointer = { sequence = [0, 1, 2, 1], fps = 12, loop = true } } });
-        pointer.sprite.origin_x = pointer.sprite.subimg_width / 2;
-        pointer.sprite.origin_y = pointer.sprite.subimg_height + 4;
-        pointer.play();
 
-        select_current_miniature();
+        selector = AnimatedSprite(surface.add_image("UI/selector_miniature.png"),
+            { sprite_width = 40, sprite_height = 24, animations = { selector = { sequence = [0, 1, 2, 1], fps = 12, loop = true } } });
+        selector.sprite.origin_x = selector.sprite.subimg_width / 2;
+        selector.sprite.origin_y = selector.sprite.subimg_height + 4;
+        selector.play();
+
+        select_next();
     }
 
-    function select_next(dir)
+    function select_next(dir = null)
     {
         place_miniatures(dir);
         select_current_miniature();
@@ -326,20 +342,14 @@ class MiniatureList
         local first = null;
 
         if(dir == null)
-        {
             first = visible_slots == miniatures.len() || fe.list.index < visible_slots - slots_margin ? 0 : fe.list.index - visible_slots + slots_margin + 1;
-        }
         else
         {
             local limit = fe.list.index + (dir * slots_margin);
             if( !miniatures[fe.list.index].visible)
-            {
                 first = dir == direction.right ? 0 : miniatures.len() - visible_slots;
-            }
             else if (limit >= 0 && limit < miniatures.len() && !miniatures[limit].visible)
-            {
                 first = limit + (dir == direction.right ? (1 - visible_slots) : 0);
-            }
         }
 
         if(first == null) return;
@@ -359,17 +369,19 @@ class MiniatureList
 
     function select_current_miniature()
     {
-        pointer.sprite.x = (miniatures[fe.list.index].x + miniatures[fe.list.index].width / 2).tointeger();
-        pointer.sprite.y = miniatures[fe.list.index].y;
+        selector.sprite.x = (miniatures[fe.list.index].x + miniatures[fe.list.index].width / 2).tointeger();
+        selector.sprite.y = miniatures[fe.list.index].y;
     }
 }
 
 class ControlsInfoPanel
 {
     surface = null;
+    items = null;
 
-    constructor(x, y, anchor, items_data)
+    constructor(center_x, y, items_data, holder = ::fe)
     {
+        items = [];
         local total_w = 0;
         local max_h = 0;
         foreach(item in items_data)
@@ -378,40 +390,39 @@ class ControlsInfoPanel
             if(max_h < item.height) max_h = item.height;
         }
 
-        surface = fe.add_surface(total_w, max_h);
-        surface.x = x;
-        surface.y = y;
-        surface.origin_x = (surface.width / 2) * (anchor % 3);
-        surface.origin_y = (surface.height / 2) * (anchor / 3);
-
         local obj = null;
-        total_w = 0;
+        local total_x = 0;
+        local pos_x = 0;
+        local pos_y = 0;
         foreach(item in items_data)
         {
+            pos_x = center_x + total_x - (total_w / 2);
+            pos_y = y + ((max_h - item.height) / 2);
+
             switch(item.item_type)
             {
                 case "image":
-                    obj = surface.add_image(item.path, total_w, (max_h - item.height) / 2);
+                    obj = holder.add_image(item.path, pos_x, pos_y);
                     obj.origin_x = obj.texture_width / 2;
                     obj.origin_y = obj.texture_height / 2;
                     obj.x += obj.origin_x;
                     obj.y += obj.origin_y;
                     break;
                 case "text":
-                    obj = surface.add_text(item.text, total_w, (max_h - item.height) / 2, item.width, item.height);
+                    obj = holder.add_text(item.text, pos_x, pos_y, item.width, item.height);
                     obj.set_rgb(167, 0, 0);
                     break;
-                default:
-                    ::print("Type " + item.item_type + " not supported.\n");
             }
+
             if("settings" in item) foreach(key, value in item.settings) obj[key] = value;
-            total_w += get_item_total_width(item);
+            items.append(obj);
+            total_x += get_item_total_width(item);
         }
     }
 
     function set_visible(visible)
     {
-        surface.visible = visible;
+        foreach(item in items) item.visible = visible; 
     }
 
     function get_item_total_width(item)
@@ -436,8 +447,6 @@ function set_rgba(obj, r, g, b, a)
 function get_filter_data()
 {
     if(Regions.rawin(fe.filters[fe.list.filter_index].name))
-    {
         return Regions[fe.filters[fe.list.filter_index].name];
-    }
-    return Regions["Nintendont"];
+    return Regions[config.default_region];
 }

@@ -2,14 +2,32 @@
 Settings
 *******/
 class UserConfig </ help="Settings" /> {
-	</ label="Select Button", help="Select button to show for Select action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=1 />
-	select_button="a";
-	</ label="Cancel Button", help="Select button to show for Back action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=2 />
-	back_button="b";
-	</ label="Previous Filter Button", help="Select button to show for Previous Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=3 />
-	prev_filter_button="r_wide";
-	</ label="Next filter Button", help="Select button to show for Next Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=4 />
-	next_filter_button="l_wide";
+	</ label="Default region", help="The region to show if there is no filter with a mathcing name.", order=1 />
+	default_region = "Nintendont";
+	</ label="Game slot width", help="The width of a game slot in the main game list.", order=2 />
+	game_slot_width = 340;
+	</ label="Game slot offset", help="The offset of the first game slot from the left border of the main game list.", order=3 />
+	game_slot_offset = 120;
+	</ label="Game art max width", help="The maximum width of game art.", order=4 />
+    game_art_max_width = 304;
+	</ label="Game art max height", help="The maximum height of game art.", order=5 />
+    game_art_max_height = 272;
+	</ label="Miniature side", help="The maimum width or height of a miniature.", order=6 />
+	miniature_max_side = "80";
+	</ label="Miniature selector vdistance", help="Distance of the miniature selector to the miniatures.", order=7 />
+	miniature_selector_distance = "28";
+	</ label="Miniatures visible", help="The maximum number of miniatures to show.", order=7 />
+	miniatures_visible = "24";
+	</ label="Miniatures margin", help="Margin when moving miniatures instead of pointer.", order=8 />
+	miniature_movement_margin = "3";
+	</ label="Select Button", help="Select button to show for Select action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=9 />
+	select_button = "a";
+	</ label="Cancel Button", help="Select button to show for Back action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=10 />
+	back_button = "b";
+	</ label="Previous Filter Button", help="Select button to show for Previous Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=11 />
+	prev_filter_button = "r_wide";
+	</ label="Next filter Button", help="Select button to show for Next Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=12 />
+	next_filter_button = "l_wide";
 }
 config <- fe.get_config();
 
@@ -43,20 +61,14 @@ game_title.add_image("UI/" + filter_data.platform + "/game_title_bg.png");
 local game_title_text = game_title.add_text("[Title]", 0, 0, 1368, 60);
 game_title_text.set_rgb(colors.title.r, colors.title.g, colors.title.b);
 
-// TODO: Move this properties to settings or a table
-// slot_width = 340;
-// slot_offset = 120;
-// art_max_width = 304;
-// art_max_height = 272;
-// local mini_art_max_side = 52;
-// vsiible_miniatures = 30;
-// miniature_movement_margin = 3;
-
 //Game List
-game_list <- GameList(0, 296, fe.layout.width, 368, 340, 120, 304, 272);
+game_list <- GameList(0, 296, fe.layout.width, 368,
+                      config.game_slot_width.tointeger(), config.game_slot_offset.tointeger(),
+                      config.game_art_max_width.tointeger(), config.game_art_max_height.tointeger());
 
 //Miniature list
-local miniature_list = MiniatureList(fe.layout.width / 2, 700, 56, 28, 30, 3);
+local miniature_list = MiniatureList(fe.layout.width / 2, 700, config.miniature_max_side.tointeger(), config.miniature_selector_distance.tointeger(),
+                                     config.miniatures_visible.tointeger(), config.miniature_movement_margin.tointeger());
 
 //Controls information
 local controls_text_settings = { char_size = 24, margin = 0, align = Align.MiddleLeft };
@@ -64,10 +76,10 @@ local controls_text_settings = { char_size = 24, margin = 0, align = Align.Middl
 local game_list_controls_items = [
     { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8 },
     { item_type = "text", text = "Menu", width = 59, height = 40, margin = 44, settings = controls_text_settings },
+    { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8, settings = { rotation = 180 } },
+    { item_type = "text", text = "Game Info", width = 114, height = 40, margin = 44, settings = controls_text_settings },
     { item_type = "image", path = "UI/Buttons/two_sides.png", width = 40, height = 40, margin = 8 },
     { item_type = "text", text = "Select Game", width = 142, height = 40, margin = 44, settings = controls_text_settings },
-    // { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8, settings = { rotation = 180 } },
-    // { item_type = "text", text = "-- ?? --", width = 72, height = 40, margin = 44, settings = controls_text_settings },
     { item_type = "image", path = "UI/Buttons/" + config.back_button + ".png", width = 40, height = 40, margin = 8 },
     { item_type = "text", text = "Back", width = 53, height = 40, margin = 44, settings = controls_text_settings },
     { item_type = "image", path = "UI/Buttons/" + config.select_button + ".png", width = 40, height = 40, margin = 8 },
@@ -91,8 +103,8 @@ local menu_controls_items = [
     { item_type = "text", text = "Change Region", width = 172, height = 40, settings = controls_text_settings },
 ];
 
-local game_list_controls = ControlsInfoPanel(fe.layout.width / 2, 936, anchors.middle.center, game_list_controls_items);
-local menu_controls = ControlsInfoPanel(fe.layout.width / 2, 936, anchors.middle.center, menu_controls_items);
+local game_list_controls = ControlsInfoPanel(fe.layout.width / 2, 912, game_list_controls_items);
+local menu_controls = ControlsInfoPanel(fe.layout.width / 2, 912, menu_controls_items);
 menu_controls.set_visible(false);
 
 //Header
@@ -130,35 +142,45 @@ local footer = fe.add_image("UI/" + filter_data.platform + "/footer.png", 0, 960
 /*******************
 Selector jump effect
 *******************/
-local selector_jump_effect = fe.add_surface(game_list.selector.texture_width, game_list.selector.texture_height);
-selector_jump_effect.visible = false;
-
-local selector_jump_effect_content =
+local selector_jump_effect;
+local selector_jump_effect_anim;
+if(fe.filters[fe.list.filter_index].size > 0)
 {
-    left = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, 8, game_list.selector.texture_height),
-    top = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, game_list.selector.texture_width, 8),
-    right = selector_jump_effect.add_image("UI/white_pixel.png", game_list.selector.texture_width, 0, 8, game_list.selector.texture_height),
-    bottom = selector_jump_effect.add_image("UI/white_pixel.png", 0, game_list.selector.texture_height, game_list.selector.texture_width, 8)
-}
-selector_jump_effect_content.right.origin_x = 8;
-selector_jump_effect_content.bottom.origin_y = 8;
-foreach(side in selector_jump_effect_content) side.set_rgb(54, 255, 254);
+    selector_jump_effect = fe.add_surface(game_list.selector.texture_width, game_list.selector.texture_height);
+    selector_jump_effect.visible = false;
 
-local selector_jump_effect_anim = Animation(150, selector_jump_effect, {
-    onupdate = function(anim)
+    local selector_jump_effect_content =
     {
-        selector_jump_effect_content.left.width = 8 * anim.config.properties.width.start / anim.object.width.tofloat();
-        selector_jump_effect_content.top.height = 8 * anim.config.properties.height.start / anim.object.height.tofloat();
-        selector_jump_effect_content.right.width = 8 * anim.config.properties.width.start / anim.object.width.tofloat();
-        selector_jump_effect_content.right.origin_x = selector_jump_effect_content.right.width;
-        selector_jump_effect_content.bottom.height = 8 * anim.config.properties.height.start / anim.object.height.tofloat();
-        selector_jump_effect_content.bottom.origin_y = selector_jump_effect_content.bottom.height;
-    },
-    onstop = function(anim) { anim.object.visible = false; }
+        left = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, 8, game_list.selector.texture_height),
+        top = selector_jump_effect.add_image("UI/white_pixel.png", 0, 0, game_list.selector.texture_width, 8),
+        right = selector_jump_effect.add_image("UI/white_pixel.png", game_list.selector.texture_width, 0, 8, game_list.selector.texture_height),
+        bottom = selector_jump_effect.add_image("UI/white_pixel.png", 0, game_list.selector.texture_height, game_list.selector.texture_width, 8)
+    };
+    selector_jump_effect_content.right.origin_x = 8;
+    selector_jump_effect_content.bottom.origin_y = 8;
+    foreach(side in selector_jump_effect_content) side.set_rgb(54, 255, 254);
+
+    selector_jump_effect_anim = Animation(150, selector_jump_effect, {
+        onupdate = function(anim)
+        {
+            selector_jump_effect_content.left.width = 8 * anim.config.properties.width.start / anim.object.width.tofloat();
+            selector_jump_effect_content.top.height = 8 * anim.config.properties.height.start / anim.object.height.tofloat();
+            selector_jump_effect_content.right.width = 8 * anim.config.properties.width.start / anim.object.width.tofloat();
+            selector_jump_effect_content.right.origin_x = selector_jump_effect_content.right.width;
+            selector_jump_effect_content.bottom.height = 8 * anim.config.properties.height.start / anim.object.height.tofloat();
+            selector_jump_effect_content.bottom.origin_y = selector_jump_effect_content.bottom.height;
+        },
+        onstop = function(anim) { anim.object.visible = false; }
     });
+}
 
 function prepare_selector_jump_effect(up, from, to)
 {
+    if(selector_jump_effect == null || selector_jump_effect_anim == null)
+    {
+        return;
+    }
+
     selector_jump_effect_anim.setup_properties({
         x = { start = from.x - from.origin_x, end = to.x - to.origin_x },
         y = { start = from.y - from.origin_y + game_list.surface.y, end = to.y - to.origin_y },
@@ -209,6 +231,31 @@ function singal_overrides(sig)
     return global_overrides(sig);
 }
 
+function menu_signal_overrides(sig)
+{
+    switch(sig)
+    {
+        case "left":
+            top_menu.select_next(direction.left);
+            return true;
+        case "right":
+            top_menu.select_next(direction.right);
+            return true;
+        case "up":
+            return true;
+        case "select":
+            top_menu.run_selected_action();
+            return true;
+        case "down":
+            header_up_animation.play();
+            play_selector_jump(false);
+            menu_controls.set_visible(false);
+            game_list_controls.set_visible(true);
+            return true;
+    }
+    return false;
+}
+
 function games_signal_overrides(sig)
 {
     switch(sig)
@@ -238,32 +285,6 @@ function games_signal_overrides(sig)
     return false;
 }
 
-function menu_signal_overrides(sig)
-{
-    switch(sig)
-    {
-        case "left":
-            top_menu.select_next(direction.left);
-            return true;
-        case "right":
-            top_menu.select_next(direction.right);
-            return true;
-        case "up":
-            return true;
-        case "select":
-            top_menu.run_selected_action();
-            return true;
-        // case "back":
-        //     return true;
-        case "down":
-            header_up_animation.play();
-            play_selector_jump(false);
-            menu_controls.set_visible(false);
-            game_list_controls.set_visible(true);
-            return true;
-    }
-    return false;
-}
 
 local exit_animation_triggered = false;
 function global_overrides(sig)
