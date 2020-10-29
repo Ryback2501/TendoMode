@@ -306,16 +306,7 @@ class MiniatureList
         for(local i = 0; i < len; i++)
         {
             miniatures.append(add_artwork("flyer", surface, i - fe.list.index));
-            if(miniatures[i].texture_width >= miniatures[i].texture_height)
-            {
-                miniatures[i].width = side;
-                miniatures[i].height = side * miniatures[i].texture_height / miniatures[i].texture_width;
-            }
-            else
-            {
-                miniatures[i].width = side * miniatures[i].texture_width / miniatures[i].texture_height;
-                miniatures[i].height = side;
-            }
+            fit_aspect_ratio(miniatures[i], side, side);
             miniatures[i].y = side + selector_distance - miniatures[i].height;
         }
 
