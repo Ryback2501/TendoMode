@@ -8,14 +8,15 @@ Regions <- {
     // Famicom_Japan = { platform = "Famicom", flag = "JAP" },
     // NES_USA = { platform = "NES", flag = "USA" },
     // NES_Europe = { platform = "NES", flag = "EUR" },
-    // Super_Famicom_Japan = { platform = "Super Famicom", flag = "JAP" }
-    // SNES_USA = { platform = "Super NES", flag = "USA" }
-    // SNES_Europe = { platform = "Super NES EUR", flag = "EUR" }
+    // Super_Famicom_Japan = { platform = "SFamicom", flag = "JAP" }
+    // SNES_USA = { platform = "SNESU", flag = "USA" }
+    // SNES_EUR = { platform = "SNESE", flag = "EUR" }
 }
 
 levels <- {
     menu = 0,
-    games = 1
+    games = 1,
+    info = 2
 };
 
 direction <- {
@@ -43,33 +44,28 @@ class GameList
     index = 0;
     selector_position = 0;
     max_position = 0;
-    slot_width = 0;
-    slot_offset = 0;
 
-    constructor(x, y, width, height, slot_width, slot_offset, art_max_width, art_max_height)
+    constructor(x, y)
     {
-        max_position = (((width - slot_offset) / slot_width) - 1).tointeger();
+        max_position = (((settings.game_list.width - settings.game_list.slot.offset.w) / settings.game_list.slot.width) - 1).tointeger();
         local size = get_fixed_list_size();
         if(size == 0) return;
 
         index = fe.list.index;
-        surface = fe.add_surface(width, height);
+        surface = fe.add_surface(settings.game_list.width, settings.game_list.height);
         surface.x = x;
         surface.y = y;
 
-        this.slot_width = slot_width;
-        this.slot_offset = slot_offset;
-
         for(local i = 0; i < size; i++)
         {
-            game_slots.append(GameSlot(surface, i, art_max_width, art_max_height, i == index));
+            game_slots.append(GameSlot(surface, i, i == index));
             game_slots[i].set_position(position_to_x(-2));
         }
         update_game_slot_positions(index - 2);
 
-        selector = surface.add_image("UI/" + filter_data.platform + "/selector_game.png", position_to_x(0), 8);
-        selector.origin_x = 8;
-        selector.origin_y = 8;
+        selector = surface.add_image("UI/" + filter_data.platform + "/selector_game.png", position_to_x(0), settings.game_list.selector.origin.y);
+        selector.origin_x = settings.game_list.selector.origin.x;
+        selector.origin_y = settings.game_list.selector.origin.y;
         selector_move_anim = Animation(150, selector, null, true);
     }
 
@@ -87,7 +83,7 @@ class GameList
             for(local i = from; i <= to; i++)
             {
                 local ind = abs_remainder(i, game_slots.len());
-                game_slots[ind].move(dir, slot_width);
+                game_slots[ind].move(dir, settings.game_list.slot.width);
             }
         }
 
@@ -113,7 +109,7 @@ class GameList
 
     function position_to_x(position)
     {
-        return (slot_width * position) + slot_offset;
+        return (settings.game_list.slot.width * position) + settings.game_list.slot.offset.w;
     }
 
     function move_selector(dir)
@@ -137,27 +133,24 @@ class GameSlot
     move_animations = null;
     highlight_animation = null;
 
-    constructor(surface, index, art_max_width, art_max_height, selected = false)
+    constructor(surface, index, selected = false)
     {
         this.surface = surface;
         this.index = index;
-        local players_data = get_players_data();
-        if(players_data.len() == 0) players_data.append("1");
         
         items = {
-            bg = surface.add_image("UI/" + filter_data.platform + "/game_bg.png", 0, 8),
-            selected_bg = surface.add_image("UI/" + filter_data.platform + "/selected_game_bg.png", 0, 8),
+            bg = surface.add_image("UI/" + filter_data.platform + "/game_bg.png", 0, settings.game_list.slot.offset.h),
+            selected_bg = surface.add_image("UI/" + filter_data.platform + "/selected_game_bg.png", 0, settings.game_list.slot.offset.h),
             art = add_artwork("flyer", surface, index - fe.list.index),
-            players = surface.add_image("UI/" + players_data[0] + "P.png", 0, 8)
+            players = surface.add_image("UI/" + filter_data.platform + "/Players/" + fe.game_info(Info.Players, index - fe.list.index) + ".png", 0, settings.game_list.slot.offset.h)
         }
         
         if(!selected) items.selected_bg.alpha = 0;
-        fit_aspect_ratio(items.art, art_max_width, art_max_height);
-        items.art.origin_x = -(8 +  ((art_max_width - items.art.width) / 2));
-        items.art.origin_y = -(16 +  ((art_max_height - items.art.height) / 2));
-        items.players.origin_x = -232;
-        items.players.origin_y = -300;
-        if(players_data.len() > 1 && players_data[1] == "s") items.players.set_rgb(255, 160, 64);
+        fit_aspect_ratio(items.art, settings.game_list.slot.art.max.w, settings.game_list.slot.art.max.h);
+        items.art.origin_x = -(settings.game_list.slot.art.origin.x + ((settings.game_list.slot.art.max.w - items.art.width) / 2));
+        items.art.origin_y = -(settings.game_list.slot.art.origin.y + ((settings.game_list.slot.art.max.h - items.art.height) / 2));
+        items.players.origin_x = settings.game_list.slot.players.origin.x;
+        items.players.origin_y = settings.game_list.slot.players.origin.y;
 
         move_animations = {};
         foreach(key, value in items) move_animations[key] <- Animation(150, value);
@@ -188,11 +181,6 @@ class GameSlot
         highlight_animation.setup_properties({ alpha = { start = selected ? 0 : 255, end = selected ? 255 : 0 } });
         highlight_animation.play();
     }
-    
-    function get_players_data()
-    {
-        return split(fe.game_info(Info.Players, index - fe.list.index), ",");
-    }
 }
 
 class Menu
@@ -208,7 +196,7 @@ class Menu
         for(local i = 0; i < items_info.len(); i++)
             items[i] <- MenuItem(holder, items_info[i], x + (i * item_width), y, item_width, item_height);
 
-        selector = fe.add_image("UI/selector_menu.png");
+        selector = fe.add_image("UI/" + filter_data.platform + "/selector_menu.png");
         selector.origin_x = 8;
         selector.origin_y = 8;
         selector.x = items[selected_item].bg.x;
@@ -289,30 +277,29 @@ class MiniatureList
     selector = null;
     center_pos_x = 0;
     visible_slots = 0;
-    slots_margin = 0;
 
-    constructor(center_x, y, side, selector_distance, visible_miniatures, margin)
+    constructor(center_x, y)
     {
         local len = fe.filters[fe.list.filter_index].size;
         if(len == 0) return;
         
         miniatures = [];
         center_pos_x = center_x;
-        visible_slots = visible_miniatures < len ? visible_miniatures : len;
-        slots_margin = margin;
-        surface = fe.add_surface((side * visible_slots) + ((visible_slots - 1) * 4), side + selector_distance)
+        visible_slots = settings.miniatures.max_visible < len ? settings.miniatures.max_visible : len;
+        surface = fe.add_surface((settings.miniatures.max_side * visible_slots) + ((visible_slots - 1) * 4), 
+                                  settings.miniatures.max_side + settings.miniatures.selector_distance)
         surface.y = y;
 
         for(local i = 0; i < len; i++)
         {
             miniatures.append(add_artwork("flyer", surface, i - fe.list.index));
-            fit_aspect_ratio(miniatures[i], side, side);
-            miniatures[i].y = side + selector_distance - miniatures[i].height;
+            fit_aspect_ratio(miniatures[i], settings.miniatures.max_side, settings.miniatures.max_side);
+            miniatures[i].y = settings.miniatures.max_side + settings.miniatures.selector_distance - miniatures[i].height;
         }
 
         place_miniatures();
 
-        selector = AnimatedSprite(surface.add_image("UI/selector_miniature.png"),
+        selector = AnimatedSprite(surface.add_image("UI/" + filter_data.platform + "/selector_miniature.png"),
             { sprite_width = 40, sprite_height = 24, animations = { selector = { sequence = [0, 1, 2, 1], fps = 12, loop = true } } });
         selector.sprite.origin_x = selector.sprite.subimg_width / 2;
         selector.sprite.origin_y = selector.sprite.subimg_height + 4;
@@ -333,10 +320,11 @@ class MiniatureList
         local first = null;
 
         if(dir == null)
-            first = visible_slots == miniatures.len() || fe.list.index < visible_slots - slots_margin ? 0 : fe.list.index - visible_slots + slots_margin + 1;
+            first = visible_slots == miniatures.len() || fe.list.index < visible_slots - settings.miniatures.movement_margin ?
+                    0 : fe.list.index - visible_slots + settings.miniatures.movement_margin + 1;
         else
         {
-            local limit = fe.list.index + (dir * slots_margin);
+            local limit = fe.list.index + (dir * settings.miniatures.movement_margin);
             if( !miniatures[fe.list.index].visible)
                 first = dir == direction.right ? 0 : miniatures.len() - visible_slots;
             else if (limit >= 0 && limit < miniatures.len() && !miniatures[limit].visible)
@@ -373,52 +361,42 @@ class ControlsInfoPanel
     constructor(center_x, y, items_data, holder = ::fe)
     {
         items = [];
-        local total_w = 0;
-        local max_h = 0;
-        foreach(item in items_data)
-        {
-            total_w += get_item_total_width(item);
-            if(max_h < item.height) max_h = item.height;
-        }
-
         local obj = null;
-        local total_x = 0;
-        local pos_x = 0;
-        local pos_y = 0;
+        local total_width = 0;
         foreach(item in items_data)
         {
-            pos_x = center_x + total_x - (total_w / 2);
-            pos_y = y + ((max_h - item.height) / 2);
-
             switch(item.item_type)
             {
                 case "image":
-                    obj = holder.add_image(item.path, pos_x, pos_y);
-                    obj.origin_x = obj.texture_width / 2;
-                    obj.origin_y = obj.texture_height / 2;
-                    obj.x += obj.origin_x;
-                    obj.y += obj.origin_y;
+                    obj = holder.add_image("UI/" + filter_data.platform + "/Buttons/" + item.path);
+                    obj.width = obj.texture_width;
+                    obj.height = obj.texture_height;
+                    obj.origin_y = (obj.texture_height - settings.controls_info.label.height) / 2;
+                    total_width += obj.width + settings.controls_info.image.spacing;
                     break;
-                case "text":
-                    obj = holder.add_text(item.text, pos_x, pos_y, item.width, item.height);
-                    obj.set_rgb(167, 0, 0);
+                case "label":
+                    obj = holder.add_text(item.text, 0, 0, item.width, settings.controls_info.label.height);
+                    obj.set_rgb(settings.controls_info.label.color.r, settings.controls_info.label.color.g, settings.controls_info.label.color.b);
+                    foreach(key, value in settings.controls_info.label.text) obj[key] = value;
+                    total_width += obj.width + settings.controls_info.label.spacing;
                     break;
             }
-
-            if("settings" in item) foreach(key, value in item.settings) obj[key] = value;
             items.append(obj);
-            total_x += get_item_total_width(item);
+        }
+        total_width -= settings.controls_info.rawget(items_data[items_data.len() - 1].item_type).spacing;
+
+        local x = center_x - (total_width / 2);
+        foreach (index, item in items)
+        {
+            item.x = x;
+            item.y = y;
+            x += item.width + settings.controls_info.rawget(items_data[index].item_type).spacing;
         }
     }
 
     function set_visible(visible)
     {
         foreach(item in items) item.visible = visible; 
-    }
-
-    function get_item_total_width(item)
-    {
-        return item.width + ("margin" in item ? item.margin : 0);
     }
 }
 

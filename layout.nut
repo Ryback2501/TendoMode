@@ -4,29 +4,15 @@ Settings
 class UserConfig </ help="Settings" /> {
 	</ label="Default region", help="The region to show if there is no filter with a mathcing name.", order=1 />
 	default_region = "Nintendont";
-	</ label="Game slot width", help="The width of a game slot in the main game list.", order=2 />
-	game_slot_width = 340;
-	</ label="Game slot offset", help="The offset of the first game slot from the left border of the main game list.", order=3 />
-	game_slot_offset = 120;
-	</ label="Game art max width", help="The maximum width of game art.", order=4 />
-    game_art_max_width = 304;
-	</ label="Game art max height", help="The maximum height of game art.", order=5 />
-    game_art_max_height = 272;
-	</ label="Miniature side", help="The maimum width or height of a miniature.", order=6 />
-	miniature_max_side = "80";
-	</ label="Miniature selector vdistance", help="Distance of the miniature selector to the miniatures.", order=7 />
-	miniature_selector_distance = "28";
-	</ label="Miniatures visible", help="The maximum number of miniatures to show.", order=7 />
-	miniatures_visible = "24";
-	</ label="Miniatures margin", help="Margin when moving miniatures instead of pointer.", order=8 />
-	miniature_movement_margin = "3";
-	</ label="Select Button", help="Select button to show for Select action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=9 />
+	</ label="Extra Info Icon", help="Icon of extra information of the game.", options="none,genre,region", order=2 />
+	extra_info_icon = "none";
+	</ label="Select Button", help="Select button to show for Select action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,symbol_x,symbol_circle,symbol_square,symbol_triangle", order=3 />
 	select_button = "a";
-	</ label="Cancel Button", help="Select button to show for Back action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=10 />
+	</ label="Cancel Button", help="Select button to show for Back action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,symbol_x,symbol_circle,symbol_square,symbol_triangle", order=4 />
 	back_button = "b";
-	</ label="Previous Filter Button", help="Select button to show for Previous Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=11 />
+	</ label="Previous Filter Button", help="Select button to show for Previous Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,symbol_x,symbol_circle,symbol_square,symbol_triangle", order=5 />
 	prev_filter_button = "r_wide";
-	</ label="Next filter Button", help="Select button to show for Next Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,one_side,two_sides", order=12 />
+	</ label="Next filter Button", help="Select button to show for Next Filter action.", options="a,b,x,y,l,l_wide,r,r_wide,select,start,symbol_x,symbol_circle,symbol_square,symbol_triangle", order=6 />
 	next_filter_button = "l_wide";
 }
 config <- fe.get_config();
@@ -50,8 +36,18 @@ fe.layout.height = 1080;
 local current_level = levels.games;
 
 //Global background
-local bg = fe.add_image("UI/white_pixel.png", 0, 128, 1920, 832);
-bg.set_rgb(colors.bg.r, colors.bg.g, colors.bg.b);
+if("background" in settings)
+{
+    if("color" in settings.background)
+    {
+        local bg = fe.add_image("UI/white_pixel.png", 0, 128, 1920, 832);
+        bg.set_rgb(settings.background.color.r, settings.background.color.g, settings.background.color.b);
+    }
+    if("image" in settings.background)
+    {
+        fe.add_image("UI/" + filter_data.platform + "/" + settings.background.image.file, 0, 128);
+    }
+}
 
 //Title
 local game_title = fe.add_surface(1368, 72);
@@ -59,52 +55,47 @@ game_title.x = 276;
 game_title.y = 200;
 game_title.add_image("UI/" + filter_data.platform + "/game_title_bg.png");
 local game_title_text = game_title.add_text("[Title]", 0, 0, 1368, 60);
-game_title_text.set_rgb(colors.title.r, colors.title.g, colors.title.b);
+game_title_text.set_rgb(settings.title.color.r, settings.title.color.g, settings.title.color.b);
 
 //Game List
-game_list <- GameList(0, 296, fe.layout.width, 368,
-                      config.game_slot_width.tointeger(), config.game_slot_offset.tointeger(),
-                      config.game_art_max_width.tointeger(), config.game_art_max_height.tointeger());
+game_list <- GameList(0, 296);
 
 //Miniature list
-local miniature_list = MiniatureList(fe.layout.width / 2, 700, config.miniature_max_side.tointeger(), config.miniature_selector_distance.tointeger(),
-                                     config.miniatures_visible.tointeger(), config.miniature_movement_margin.tointeger());
+local miniature_list = MiniatureList(fe.layout.width / 2, 700);
 
 //Controls information
-local controls_text_settings = { char_size = 24, margin = 0, align = Align.MiddleLeft };
-
 local game_list_controls_items = [
-    { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8 },
-    { item_type = "text", text = "Menu", width = 59, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8, settings = { rotation = 180 } },
-    { item_type = "text", text = "Game Info", width = 114, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/two_sides.png", width = 40, height = 40, margin = 8 },
-    { item_type = "text", text = "Select Game", width = 142, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/" + config.back_button + ".png", width = 40, height = 40, margin = 8 },
-    { item_type = "text", text = "Back", width = 53, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/" + config.select_button + ".png", width = 40, height = 40, margin = 8 },
-    { item_type = "text", text = "Start Game", width = 127, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/" + config.prev_filter_button + ".png", width = 80, height = 40, margin = 8 },
-    { item_type = "image", path = "UI/Buttons/" + config.next_filter_button + ".png", width = 80, height = 40, margin = 8 },
-    { item_type = "text", text = "Change Region", width = 172, height = 40, settings = controls_text_settings },
+    { item_type = "image", path = "side_up.png" },
+    { item_type = "label", text = "Menu", width = 59 },
+    { item_type = "image", path = "side_down.png" },
+    { item_type = "label", text = "Game Info", width = 114 },
+    { item_type = "image", path = "side_left_right.png" },
+    { item_type = "label", text = "Select Game", width = 142 },
+    { item_type = "image", path = config.back_button + ".png" },
+    { item_type = "label", text = "Back", width = 53 },
+    { item_type = "image", path = config.select_button + ".png" },
+    { item_type = "label", text = "Start Game", width = 127 },
+    { item_type = "image", path = config.prev_filter_button + ".png" },
+    { item_type = "image", path = config.next_filter_button + ".png" },
+    { item_type = "label", text = "Change Region", width = 172 }
 ];
 
 local menu_controls_items = [
-    { item_type = "image", path = "UI/Buttons/one_side.png", width = 40, height = 40, margin = 8, settings = { rotation = 180 } },
-    { item_type = "text", text = "Game List", width = 112, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/two_sides.png", width = 40, height = 40, margin = 8 },
-    { item_type = "text", text = "Select Option", width = 149, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/" + config.back_button + ".png", width = 40, height = 40, margin = 8 },
-    { item_type = "text", text = "Back", width = 53, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/" + config.select_button + ".png", width = 40, height = 40, margin = 8 },
-    { item_type = "text", text = "OK", width = 34, height = 40, margin = 44, settings = controls_text_settings },
-    { item_type = "image", path = "UI/Buttons/" + config.prev_filter_button + ".png", width = 80, height = 40, margin = 8 },
-    { item_type = "image", path = "UI/Buttons/" + config.next_filter_button + ".png", width = 80, height = 40, margin = 8 },
-    { item_type = "text", text = "Change Region", width = 172, height = 40, settings = controls_text_settings },
+    { item_type = "image", path = "side_down.png" },
+    { item_type = "label", text = "Game List", width = 112 },
+    { item_type = "image", path = "side_left_right.png" },
+    { item_type = "label", text = "Select Option", width = 149 },
+    { item_type = "image", path = config.back_button + ".png" },
+    { item_type = "label", text = "Back", width = 53 },
+    { item_type = "image", path = config.select_button + ".png" },
+    { item_type = "label", text = "OK", width = 34 },
+    { item_type = "image", path = config.prev_filter_button + ".png" },
+    { item_type = "image", path = config.next_filter_button + ".png" },
+    { item_type = "label", text = "Change Region", width = 172 }
 ];
 
-local game_list_controls = ControlsInfoPanel(fe.layout.width / 2, 912, game_list_controls_items);
-local menu_controls = ControlsInfoPanel(fe.layout.width / 2, 912, menu_controls_items);
+local game_list_controls = ControlsInfoPanel(fe.layout.width / 2, 888, game_list_controls_items);
+local menu_controls = ControlsInfoPanel(fe.layout.width / 2, 888, menu_controls_items);
 menu_controls.set_visible(false);
 
 //Header
@@ -124,11 +115,11 @@ local header_up_animation = Animation(150, header, { properties = { y = { start 
 } }, true);
 
 local menu_options = {}
-menu_options[0] <- { image = "UI/menu_opt_display.png", action = function() { ::print("Option 1\n"); } };
-menu_options[1] <- { image = "UI/menu_opt_settings.png", action = function() { ::print("Option 2\n"); } };
-menu_options[2] <- { image = "UI/menu_opt_language.png", action = function() { ::print("Option 3\n"); } };
-menu_options[3] <- { image = "UI/menu_opt_legal.png", action = function() { ::print("Option 4\n"); } };
-menu_options[4] <- { image = "UI/menu_opt_help.png", action = function() { ::print("Option 5\n"); } };
+menu_options[0] <- { image = "UI/Menu/menu_opt_display.png", action = function() { ::print("Option 1\n"); } };
+menu_options[1] <- { image = "UI/Menu/menu_opt_settings.png", action = function() { ::print("Option 2\n"); } };
+menu_options[2] <- { image = "UI/Menu/menu_opt_language.png", action = function() { ::print("Option 3\n"); } };
+menu_options[3] <- { image = "UI/Menu/menu_opt_legal.png", action = function() { ::print("Option 4\n"); } };
+menu_options[4] <- { image = "UI/Menu/menu_opt_help.png", action = function() { ::print("Option 5\n"); } };
 
 top_menu <- Menu(menu_options, 640, 44, 128, 92, header);
 
@@ -227,6 +218,9 @@ function singal_overrides(sig)
         case levels.games:
             if(games_signal_overrides(sig)) return true;
             break;
+        case levels.info:
+            if(info_signal_overrides(sig)) return true;
+            break;
     }
     return global_overrides(sig);
 }
@@ -261,30 +255,45 @@ function games_signal_overrides(sig)
     switch(sig)
     {
         case "left":
-            if(blocking_animations_running()) return true;
+            if(blocking_animations_running() || game_list.game_slots.len() == 0) return true;
             fe.list.index += direction.left;
             game_list.select_next(direction.left);
             miniature_list.select_next(direction.left);
             return true;
         case "right":
-            if(blocking_animations_running()) return true;
+            if(blocking_animations_running() || game_list.game_slots.len() == 0) return true;
             fe.list.index += direction.right;
             game_list.select_next(direction.right);
             miniature_list.select_next(direction.right);
             return true;
         case "up":
-            if(blocking_animations_running()) return true;
+            if(blocking_animations_running() || game_list.game_slots.len() == 0) return true;
             header_down_animation.play();
             play_selector_jump(true);
             game_list_controls.set_visible(false);
             menu_controls.set_visible(true);
             return true;
-        case "down":
-            return true;
     }
     return false;
 }
 
+function info_signal_overrides(sig)
+{
+    switch(sig)
+    {
+        case "left":
+        case "right":
+        case "down":
+        case "prev_filter":
+        case "next_filter":
+            return true;
+        case "up":
+        case "back":
+            //Go back to game lists
+            return true;
+    }
+    return false;
+}
 
 local exit_animation_triggered = false;
 function global_overrides(sig)
