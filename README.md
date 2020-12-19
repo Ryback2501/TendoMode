@@ -33,11 +33,11 @@ Those rom list files  ar in the `./romlists` subfolder of themain  Attract Mode 
 ### Orange number of players
 In Nintendo Classic Mini menu, some multiplayer games have  an orange number of players icon to indicate that players can play simultaneously.
 
-To indicate that, edit the `Players` property in the rom list file adding an `s` character sepparated by a comma. Here's an example:
+To indicate that, add a capital 'S' after the number in the `Players` property of the rom list file. Here's an example:
 
-````squirrel
+````
 #Name;Title;Emulator;CloneOf;Year;Manufacturer;Category;Players;Rotation;Control;Status;DisplayCount;DisplayType;AltRomname;AltTitle;Extra;Buttons;Series;Language;Region;Rating
-Battletoads (J);Battletoads;NES;;;Rare;Fighting, Platform, Platform;2,s;;;;;;;Battletoads;;;Battletoads;;JAP;E - Everyone
+Battletoads (J);Battletoads;NES;;;Rare;Fighting, Platform, Platform;2S;;;;;;;Battletoads;;;Battletoads;;JAP;E - Everyone
 Castlevania (EU);Castlevania;NES;;;Konami;Action, Adventure, Platform;1;;;;;;;Castlevania;;;Castlevania;;EUR,USA;E - Everyone
 ````
 In this example, the game Battletoads will have an orange '2P' icon and the game Castlevania will have a white '1P' icon.
