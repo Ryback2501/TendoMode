@@ -15,7 +15,7 @@ The idea was to create filters for the games, each one for a different region, a
 
 I haven't included all the media files in the repository to avoid copyright problems, but they are available in this post. There are links under the screenshots. None of the images are the original images, because I had to resize and adapt them, but prevention is better than cure.
 
-## How to add customizations?
+### How to add customizations?
 1. Create a folder inside the **UI** folder of the layout with all the images (as in the Nintendont folder already included).
 2. If you need to, add a flag image in the **UI/Flags** folder of the layout.
 3. Open the **definitions.nut** file with a text editor
@@ -25,5 +25,22 @@ I haven't included all the media files in the repository to avoid copyright prob
     ````
     The value of *platform* is the name of the folder and the value of *flag* is the name of the image file of the flag without extension.
 
-## Issues detected and solved
-- [Exclamation marks in ROM filenames](https://github.com/Ryback2501/TendoMode/issues/1)
+## Game Information in ROM Lists
+Some fields in the corresponding rom list file must have a specific format to show information as in the original Nintendo Classic Mini menu.
+
+Those rom list files  ar in the `./romlists` subfolder of themain  Attract Mode folder.
+
+### Orange number of players
+In Nintendo Classic Mini menu, some multiplayer games have  an orange number of players icon to indicate that players can play simultaneously.
+
+To indicate that, edit the `Players` property in the rom list file adding an `s` character sepparated by a comma. Here's an example:
+
+````squirrel
+#Name;Title;Emulator;CloneOf;Year;Manufacturer;Category;Players;Rotation;Control;Status;DisplayCount;DisplayType;AltRomname;AltTitle;Extra;Buttons;Series;Language;Region;Rating
+Battletoads (J);Battletoads;NES;;;Rare;Fighting, Platform, Platform;2,s;;;;;;;Battletoads;;;Battletoads;;JAP;E - Everyone
+Castlevania (EU);Castlevania;NES;;;Konami;Action, Adventure, Platform;1;;;;;;;Castlevania;;;Castlevania;;EUR,USA;E - Everyone
+````
+In this example, the game Battletoads will have an orange '2P' icon and the game Castlevania will have a white '1P' icon.
+
+## Issues
+- [Exclamation marks in ROM filenames](https://github.com/Ryback2501/TendoMode/issues/1) :heavy_check_mark:
